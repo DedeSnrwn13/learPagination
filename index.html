@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Pagintion</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+  	<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+  	<style>
+			
+			body {
+				margin: 0;
+				padding: 0;
+			}
+
+			ul {
+				box-sizing: border-box;
+				overflow: hidden;
+			}
+
+			li {
+				vertical-align: middle;
+				align-items: center;		
+			}
+
+			li a {
+				margin-left: 20px;
+			}
+
+			li h5 {
+				width: 3%;
+			}
+
+			li p {
+				font-size: 10px;
+				float: right;
+				margin-left: auto;
+				text-align: right;
+			}
+	</style>
+</head>
+<body>
+		<div class="container p-3">
+			<div class="w-100 row justify-content-center  clearfix">
+				<ul class="pagination pagination-sm" id="paginator_top">
+					
+				</ul>
+			</div>
+			<div class="row mb-5 bg-info" id="row_content">
+				
+			</div>
+			<div class="w-100 row justify-content-center mt-5 clearfix mb-5 bg-succes text-light">
+				<ul class="pagination pagination-sm" id="paginator_bottom">
+					
+				</ul>
+			</div>
+		</div>
+		<ul>
+			<template id="templates">
+				<li class="list-group-item w-100 float-left d-flex">
+					<h5 class="float-left"> {score} </h5>
+					<p> {descendants} </p>
+					<p> {time} </p>
+					<a href=""> <p> {title} </p></a>
+					<p> by : {by} </p>
+				</li>
+			</template> 
+		</ul>
+		</template>
+		<template id="paginator">
+			<li class="page-item page-{uri}">
+				<a class="page-link "  href="?page={uri}">{uri}</a>
+			</li>
+		</template>
+
+		
+		
+</body>
+	<script>
+		const datap = "https://hacker-news.firebaseio.com/v0/topstories.json?print=pretty";
+		const limit = 20;
+		const getTime  = (time)=>{
+			var tanggal = new  Date(time * 1000);
+			var bulan   = ["Januari","Februari","Maret","April","Mei","juni","July","Agustus","September","Oktober","November","Desember"];
+			var hari    = ["Minggu","Senin","Selasa","Rabu","Kamis","Jum'at","sabtu"];
+			return `${hari[tanggal.getDay()]} ${tanggal.getDay()} ${bulan[tanggal.getMonth()]} ${tanggal.getFullYear()} : ${tanggal.getHours()} : ${tanggal.getMinute()} : ${tanggal.getSeconds()}`;
+		}
+		(async()=> {
+			const template      =  document.getElementById("templates").innerHTML;
+			const paginator     =  document.getElementById("paginator").innerHTML;
+			const searchParams  =  new URLSearchParams(window.location.search);
+
+
+			fetch(datap).then(async (result)=> {
+				result    = await result.json();
+				var desimal  = Math.ceil(result.length / limit); 
+				let temp_pagination = "";
+				for (var i = 0; i < desimal; i++) {
+					temp_pagination = temp_pagination+ paginator.split("{uri}").join(i+1);
+				}
+
+				await document.getElementById('paginator_top').insertAdjacentHTML('beforeend',temp_pagination);
+				await document.getElementById('paginator_bottom').insertAdjacentHTML('beforeend',temp_pagination);
+				const page  = searchParams.get("page") ? searchParams.get("page") : 1;
+				var aktifr  = document.querySelectorAll(`.page-${page}`);
+				aktifr[0].classList.add("active");
+				aktifr[1].classList.add("active");
+
+				result.forEach((data,key)=>{
+					if (key > ((page * limit) - limit) && key <= (((page) * limit))) {
+						fetch(`https://hacker-news.firebaseio.com/v0/item/${data}.json?print=pretty`).then(async(res)=>{
+							res = await res.json();
+							var temp_data = template.replace("{score}",res["score"])
+													.replace("{descendants}",res["descendants"])
+													.replace("{time}",res["time"])
+													.replace("{type}",res["type"])
+													.replace("{title}",res["title"].substring(0,45))
+													.replace("{by}",res["by"])
+							document.getElementById('row_content').insertAdjacentHTML("beforeend",temp_data);
+													
+						})
+					}
+
+				})
+
+			})
+		})()
+
+		//function timeConverter(UNIX_timestamp){ var a = new Date(UNIX_timestamp * 1000); var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']; var year = a.getFullYear(); var month = months[a.getMonth()]; var date = a.getDate(); var hour = a.getHours(); var min = a.getMinutes(); var sec = a.getSeconds(); var time = date + ' ' + month + ' ' + year + ' ' + hour + ':' + min + ':' + sec ; return time; } console.log(timeConverter(0));
+	</script>
+</html>
